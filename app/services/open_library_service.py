@@ -5,13 +5,17 @@ from app.schemas.work import WorkCreate
 
 OPEN_LIBRARY_SEARCH_URL = "https://openlibrary.org/search.json"
 OPEN_LIBRARY_COVER_URL = "https://covers.openlibrary.org/b/id/{cover_id}-M.jpg"
+_SEARCH_FIELDS = "key,title,author_name,cover_i,subject"
 
 
 class OpenLibraryService:
     async def search(self, query: str) -> list[WorkCreate]:
         try:
             async with httpx.AsyncClient(timeout=5.0) as client:
-                response = await client.get(OPEN_LIBRARY_SEARCH_URL, params={"q": query, "limit": 10})
+                response = await client.get(
+                    OPEN_LIBRARY_SEARCH_URL,
+                    params={"q": query, "limit": 10, "fields": _SEARCH_FIELDS},
+                )
                 response.raise_for_status()
         except httpx.HTTPError:
             return []
@@ -38,4 +42,5 @@ class OpenLibraryService:
             external_id=external_id,
             synopsis=None,
             cover_url=cover_url,
+            subjects=doc.get("subject") or [],
         )

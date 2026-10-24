@@ -20,7 +20,7 @@ class WorkRepository:
         return result.scalar_one_or_none()
 
     async def create(self, work_data: WorkCreate) -> Work:
-        work = Work(**work_data.model_dump())
+        work = Work(**work_data.model_dump(exclude={"subjects"}))
         self.db.add(work)
         await self.db.flush()
         await self.db.refresh(work)

@@ -10,6 +10,7 @@ class WorkCreate(BaseModel):
     external_id: str
     synopsis: str | None = None
     cover_url: str | None = None
+    subjects: list[str] = []
 
 
 class WorkResponse(BaseModel):
