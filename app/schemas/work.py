@@ -24,3 +24,14 @@ class WorkResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class WorkSummary(BaseModel):
+    id: uuid.UUID
+    medium: str
+    title: str
+    creator: str
+    cover_url: str | None
+
+    class Config:
+        from_attributes = True

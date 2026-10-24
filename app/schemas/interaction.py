@@ -3,6 +3,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.schemas.work import WorkSummary
+
 
 class InteractionCreate(BaseModel):
     work_id: uuid.UUID
@@ -15,6 +17,7 @@ class InteractionResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     work_id: uuid.UUID
+    work: WorkSummary
     status: str
     rating: int | None
     review_text: str | None
