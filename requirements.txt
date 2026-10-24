@@ -6,3 +6,4 @@ alembic
 pydantic-settings
 python-dotenv
 httpx
+pyjwt[crypto]

@@ -11,5 +11,9 @@ class Settings(BaseSettings):
     postgres_host: str
     postgres_port: int
 
+    clerk_publishable_key: str
+    clerk_secret_key: str
+    clerk_issuer: str
+
 
 settings = Settings()
