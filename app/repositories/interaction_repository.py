@@ -18,6 +18,10 @@ class InteractionRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_by_id(self, interaction_id: uuid.UUID) -> UserInteraction | None:
+        result = await self.db.execute(select(UserInteraction).where(UserInteraction.id == interaction_id))
+        return result.scalar_one_or_none()
+
     async def create(
         self,
         user_id: uuid.UUID,
