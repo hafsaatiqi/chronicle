@@ -3,6 +3,7 @@ from enum import Enum
 
 class Medium(str, Enum):
     BOOK = "BOOK"
+    FILM = "FILM"
 
 
 class TagCategory(str, Enum):

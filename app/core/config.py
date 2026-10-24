@@ -15,5 +15,7 @@ class Settings(BaseSettings):
     clerk_secret_key: str
     clerk_issuer: str
 
+    tmdb_api_key: str
+
 
 settings = Settings()

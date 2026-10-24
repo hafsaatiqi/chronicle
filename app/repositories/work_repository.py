@@ -26,8 +26,10 @@ class WorkRepository:
         await self.db.refresh(work)
         return work
 
-    async def search_local(self, query: str, limit: int = 10) -> list[Work]:
+    async def search_local(self, query: str, medium: str, limit: int = 10) -> list[Work]:
         result = await self.db.execute(
-            select(Work).where(Work.title.ilike(f"%{query}%")).limit(limit)
+            select(Work)
+            .where(Work.title.ilike(f"%{query}%"), Work.medium == medium)
+            .limit(limit)
         )
         return list(result.scalars().all())

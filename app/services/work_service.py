@@ -1,11 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.enums import TagCategory, TagSource
+from app.models.enums import Medium, TagCategory, TagSource
 from app.models.work import Work
 from app.repositories.tag_repository import TagRepository
 from app.repositories.work_repository import WorkRepository
 from app.repositories.work_tag_repository import WorkTagRepository
 from app.services.open_library_service import OpenLibraryService
+from app.services.tmdb_service import TMDBService
 
 RESULT_LIMIT = 10
 MAX_CATALOG_TAGS_PER_WORK = 5
@@ -50,13 +51,16 @@ class WorkService:
         self.work_repository = WorkRepository(db)
         self.tag_repository = TagRepository(db)
         self.work_tag_repository = WorkTagRepository(db)
-        self.open_library_service = OpenLibraryService()
+        self._external_services = {
+            Medium.BOOK.value: OpenLibraryService(),
+            Medium.FILM.value: TMDBService(),
+        }
 
-    async def search_or_create(self, query: str) -> list[Work]:
-        local_results = await self.work_repository.search_local(query, limit=RESULT_LIMIT)
+    async def search_or_create(self, query: str, medium: str = Medium.BOOK.value) -> list[Work]:
+        local_results = await self.work_repository.search_local(query, medium, limit=RESULT_LIMIT)
         known_external_ids = {work.external_id for work in local_results}
 
-        external_results = await self.open_library_service.search(query)
+        external_results = await self._external_services[medium].search(query)
 
         newly_created: list[Work] = []
         for work_data in external_results:
