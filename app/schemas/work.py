@@ -1,0 +1,25 @@
+import uuid
+
+from pydantic import BaseModel
+
+
+class WorkCreate(BaseModel):
+    medium: str
+    title: str
+    creator: str
+    external_id: str
+    synopsis: str | None = None
+    cover_url: str | None = None
+
+
+class WorkResponse(BaseModel):
+    id: uuid.UUID
+    medium: str
+    title: str
+    creator: str
+    external_id: str
+    synopsis: str | None
+    cover_url: str | None
+
+    class Config:
+        from_attributes = True
