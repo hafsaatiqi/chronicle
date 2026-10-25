@@ -1,6 +1,7 @@
 import uuid
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.work import Work
@@ -20,9 +21,18 @@ class WorkRepository:
         return result.scalar_one_or_none()
 
     async def create(self, work_data: WorkCreate) -> Work:
+        """Insert a work; if a concurrent request already created this external_id, return that row instead."""
         work = Work(**work_data.model_dump(exclude={"subjects"}))
-        self.db.add(work)
-        await self.db.flush()
+        try:
+            # Savepoint, so a unique violation doesn't poison the caller's whole transaction.
+            async with self.db.begin_nested():
+                self.db.add(work)
+                await self.db.flush()
+        except IntegrityError:
+            existing = await self.get_by_external_id(work_data.external_id)
+            if existing is None:
+                raise
+            return existing
         await self.db.refresh(work)
         return work
 

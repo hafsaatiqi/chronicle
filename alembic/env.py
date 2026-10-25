@@ -22,7 +22,8 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Use the app's own settings (from .env) rather than the static value in alembic.ini
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# configparser treats "%" as interpolation syntax; escape it so URL-encoded passwords survive.
+config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
 
 if sys.platform == "win32":
     # asyncpg's SSL negotiation is incompatible with the default ProactorEventLoop on Windows.

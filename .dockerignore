@@ -1,0 +1,22 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.claude
+.vscode
+.idea
+
+# Secrets and local config must never be baked into an image
+.env
+.env.*
+!.env.example
+
+# Not needed at runtime
+tests
+requirements-dev.txt
+docker-compose.yml
+Dockerfile
+.dockerignore
+*.md
