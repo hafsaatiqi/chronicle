@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,3 +20,9 @@ async def search_works(
     service = WorkService(db)
     results = await service.search_or_create(q, medium.value)
     return results
+
+
+@router.get("/{work_id}", response_model=WorkResponse)
+async def get_work(work_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    service = WorkService(db)
+    return await service.get_work(work_id)

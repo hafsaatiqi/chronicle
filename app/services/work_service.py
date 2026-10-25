@@ -1,3 +1,6 @@
+import uuid
+
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.enums import Medium, TagCategory, TagSource
@@ -55,6 +58,12 @@ class WorkService:
             Medium.BOOK.value: OpenLibraryService(),
             Medium.FILM.value: TMDBService(),
         }
+
+    async def get_work(self, work_id: uuid.UUID) -> Work:
+        work = await self.work_repository.get_by_id(work_id)
+        if work is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Work not found")
+        return work
 
     async def search_or_create(self, query: str, medium: str = Medium.BOOK.value) -> list[Work]:
         local_results = await self.work_repository.search_local(query, medium, limit=RESULT_LIMIT)

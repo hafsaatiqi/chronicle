@@ -1,3 +1,7 @@
+import uuid
+
+import pytest
+from fastapi import HTTPException
 from unittest.mock import AsyncMock, MagicMock
 
 from app.models.enums import Medium
@@ -168,3 +172,25 @@ class TestSearchOrCreateMediumDispatch:
         await service.search_or_create("Dune")
 
         service.db.commit.assert_not_called()
+
+
+class TestGetWork:
+    async def test_returns_work_when_found(self):
+        service = make_service()
+        work = MagicMock()
+        service.work_repository.get_by_id = AsyncMock(return_value=work)
+        work_id = uuid.uuid4()
+
+        result = await service.get_work(work_id)
+
+        assert result is work
+        service.work_repository.get_by_id.assert_awaited_once_with(work_id)
+
+    async def test_raises_404_when_missing(self):
+        service = make_service()
+        service.work_repository.get_by_id = AsyncMock(return_value=None)
+
+        with pytest.raises(HTTPException) as exc:
+            await service.get_work(uuid.uuid4())
+
+        assert exc.value.status_code == 404
