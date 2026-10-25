@@ -41,7 +41,7 @@ class InteractionService:
     async def list_my_shelf(self, user: User, status_filter: str | None) -> list[UserInteraction]:
         if status_filter is not None and status_filter not in _VALID_STATUSES:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Invalid status filter '{status_filter}'",
             )
         return await self.interaction_repository.list_by_user(user.id, status_filter)
@@ -50,20 +50,20 @@ class InteractionService:
         if status_value is None:
             if rating is None:
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                     detail="status is required when rating is not provided",
                 )
             return InteractionStatus.FINISHED.value
 
         if status_value not in _VALID_STATUSES:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Invalid status '{status_value}'",
             )
 
         if rating is not None and status_value not in _RATING_ALLOWED_STATUSES:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="rating is only allowed when status is FINISHED or DROPPED",
             )
 

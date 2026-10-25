@@ -34,3 +34,6 @@ docker-compose.override.yml
 # Distribution / packaging
 build/
 dist/
+
+# Claude Code local state
+.claude/
