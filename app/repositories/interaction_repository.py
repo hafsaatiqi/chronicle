@@ -54,7 +54,9 @@ class InteractionRepository:
         interaction.rating = rating
         interaction.review_text = review_text
         await self.db.flush()
-        await self.db.refresh(interaction, attribute_names=["work"])
+        # updated_at is regenerated server-side (onupdate=func.now()), which expires it on the instance;
+        # reload it here, since async SQLAlchemy can't lazy-load it later during response serialization.
+        await self.db.refresh(interaction, attribute_names=["work", "updated_at"])
         return interaction
 
     async def list_by_user(self, user_id: uuid.UUID, status: str | None = None) -> list[UserInteraction]:
