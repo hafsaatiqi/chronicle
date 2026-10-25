@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from app.repositories.tag_repository import TagRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.work_repository import WorkRepository
 from app.schemas.work import WorkCreate
@@ -84,3 +85,29 @@ class TestUserCreate:
 
         with pytest.raises(IntegrityError):
             await repo.create("clerk_1", "taken@b.com", "A B")
+
+
+class TestTagCreate:
+    async def test_inserts_normally_without_conflict(self):
+        db = make_db(flush_error=None)
+        repo = TagRepository(db)
+
+        tag = await repo.create("  Slow Burn ", "PACING")
+
+        assert tag.name == "Slow Burn"
+
+    async def test_returns_existing_row_on_unique_violation(self):
+        db = make_db(flush_error=integrity_error())
+        repo = TagRepository(db)
+        winner = MagicMock()
+        repo.get_by_name = AsyncMock(return_value=winner)
+
+        assert await repo.create("Slow Burn", "PACING") is winner
+
+    async def test_reraises_when_no_existing_row_explains_the_violation(self):
+        db = make_db(flush_error=integrity_error())
+        repo = TagRepository(db)
+        repo.get_by_name = AsyncMock(return_value=None)
+
+        with pytest.raises(IntegrityError):
+            await repo.create("Slow Burn", "PACING")
