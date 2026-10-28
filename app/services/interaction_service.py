@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -5,6 +7,7 @@ from app.models.enums import InteractionStatus
 from app.models.user import User
 from app.models.user_interaction import UserInteraction
 from app.repositories.interaction_repository import InteractionRepository
+from app.repositories.interaction_tag_repository import InteractionTagRepository
 from app.repositories.work_repository import WorkRepository
 from app.schemas.interaction import InteractionCreate
 
@@ -16,6 +19,7 @@ class InteractionService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.interaction_repository = InteractionRepository(db)
+        self.interaction_tag_repository = InteractionTagRepository(db)
         self.work_repository = WorkRepository(db)
 
     async def log_interaction(self, user: User, data: InteractionCreate) -> UserInteraction:
@@ -38,13 +42,30 @@ class InteractionService:
         await self.db.commit()
         return result
 
-    async def list_my_shelf(self, user: User, status_filter: str | None) -> list[UserInteraction]:
+    async def list_my_shelf(
+        self, user: User, status_filter: str | None, limit: int = 50, offset: int = 0
+    ) -> list[UserInteraction]:
         if status_filter is not None and status_filter not in _VALID_STATUSES:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Invalid status filter '{status_filter}'",
             )
-        return await self.interaction_repository.list_by_user(user.id, status_filter)
+        return await self.interaction_repository.list_by_user(user.id, status_filter, limit, offset)
+
+    async def delete_interaction(self, user: User, interaction_id: uuid.UUID) -> None:
+        interaction = await self.interaction_repository.get_by_id(interaction_id)
+        if interaction is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interaction not found")
+        if interaction.user_id != user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have access to this interaction",
+            )
+
+        # no DB-level cascade, so remove the personal tag links first
+        await self.interaction_tag_repository.remove_all_for_interaction(interaction.id)
+        await self.interaction_repository.delete(interaction)
+        await self.db.commit()
 
     def _resolve_status(self, status_value: str | None, rating: int | None) -> str:
         if status_value is None:

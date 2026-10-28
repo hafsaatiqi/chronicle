@@ -102,3 +102,41 @@ async def test_list_tags_has_no_ownership_check():
 
     assert len(result) == 1
     assert result[0].tag_name == "Slow Burn"
+
+
+async def test_removing_own_tag_deletes_link_and_commits():
+    service = make_service()
+    interaction = make_interaction(OWNER_ID)
+    service.interaction_repository.get_by_id.return_value = interaction
+    tag_id = uuid.uuid4()
+    service.interaction_tag_repository.get_by_interaction_and_tag.return_value = SimpleNamespace(tag_id=tag_id)
+
+    await service.remove_tag(OWNER, interaction.id, tag_id)
+
+    service.interaction_tag_repository.remove_tag_from_interaction.assert_awaited_once_with(interaction.id, tag_id)
+    service.db.commit.assert_awaited_once()
+
+
+async def test_removing_tag_not_on_interaction_raises_404():
+    service = make_service()
+    interaction = make_interaction(OWNER_ID)
+    service.interaction_repository.get_by_id.return_value = interaction
+    service.interaction_tag_repository.get_by_interaction_and_tag.return_value = None
+
+    with pytest.raises(HTTPException) as exc_info:
+        await service.remove_tag(OWNER, interaction.id, uuid.uuid4())
+
+    assert exc_info.value.status_code == 404
+    service.interaction_tag_repository.remove_tag_from_interaction.assert_not_called()
+
+
+async def test_removing_tag_on_someone_elses_interaction_raises_403():
+    service = make_service()
+    interaction = make_interaction(uuid.uuid4())
+    service.interaction_repository.get_by_id.return_value = interaction
+
+    with pytest.raises(HTTPException) as exc_info:
+        await service.remove_tag(OWNER, interaction.id, uuid.uuid4())
+
+    assert exc_info.value.status_code == 403
+    service.interaction_tag_repository.remove_tag_from_interaction.assert_not_called()

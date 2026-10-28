@@ -62,6 +62,16 @@ class TagService:
             for link in links
         ]
 
+    async def remove_tag(self, user: User, interaction_id: uuid.UUID, tag_id: uuid.UUID) -> None:
+        interaction = await self._get_owned_interaction(user, interaction_id)
+
+        link = await self.interaction_tag_repository.get_by_interaction_and_tag(interaction.id, tag_id)
+        if link is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found on this interaction")
+
+        await self.interaction_tag_repository.remove_tag_from_interaction(interaction.id, tag_id)
+        await self.db.commit()
+
     async def _get_owned_interaction(self, user: User, interaction_id: uuid.UUID):
         interaction = await self.interaction_repository.get_by_id(interaction_id)
         if interaction is None:

@@ -59,11 +59,19 @@ class InteractionRepository:
         await self.db.refresh(interaction, attribute_names=["work", "updated_at"])
         return interaction
 
-    async def list_by_user(self, user_id: uuid.UUID, status: str | None = None) -> list[UserInteraction]:
+    async def list_by_user(
+        self, user_id: uuid.UUID, status: str | None = None, limit: int = 50, offset: int = 0
+    ) -> list[UserInteraction]:
         query = select(UserInteraction).options(selectinload(UserInteraction.work)).where(
             UserInteraction.user_id == user_id
         )
         if status is not None:
             query = query.where(UserInteraction.status == status)
+        # id is a tiebreaker so pages stay stable when created_at collides
+        query = query.order_by(UserInteraction.created_at.desc(), UserInteraction.id).limit(limit).offset(offset)
         result = await self.db.execute(query)
         return list(result.scalars().all())
+
+    async def delete(self, interaction: UserInteraction) -> None:
+        await self.db.delete(interaction)
+        await self.db.flush()

@@ -14,6 +14,8 @@ PROTECTED = [
     ("GET", "/interactions/me", None),
     ("POST", "/interactions", {"work_id": str(_ID), "rating": 5}),
     ("POST", f"/interactions/{_ID}/tags", {"tag_name": "x", "sentiment": "POSITIVE"}),
+    ("DELETE", f"/interactions/{_ID}", None),
+    ("DELETE", f"/interactions/{_ID}/tags/{_ID}", None),
     ("GET", "/recommendations", None),
 ]
 

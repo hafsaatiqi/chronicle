@@ -13,6 +13,7 @@ def make_service() -> InteractionService:
     service = InteractionService(db=MagicMock())
     service.db.commit = AsyncMock()
     service.interaction_repository = AsyncMock()
+    service.interaction_tag_repository = AsyncMock()
     service.work_repository = AsyncMock()
     return service
 
@@ -117,4 +118,47 @@ class TestListMyShelf:
 
         await service.list_my_shelf(OWNER, "FINISHED")
 
-        service.interaction_repository.list_by_user.assert_awaited_once_with(OWNER.id, "FINISHED")
+        service.interaction_repository.list_by_user.assert_awaited_once_with(OWNER.id, "FINISHED", 50, 0)
+
+    async def test_limit_and_offset_pass_through(self):
+        service = make_service()
+        service.interaction_repository.list_by_user.return_value = []
+
+        await service.list_my_shelf(OWNER, None, limit=10, offset=20)
+
+        service.interaction_repository.list_by_user.assert_awaited_once_with(OWNER.id, None, 10, 20)
+
+
+class TestDeleteInteraction:
+    async def test_deletes_tag_links_then_interaction_and_commits(self):
+        service = make_service()
+        interaction = SimpleNamespace(id=uuid.uuid4(), user_id=OWNER.id)
+        service.interaction_repository.get_by_id.return_value = interaction
+
+        await service.delete_interaction(OWNER, interaction.id)
+
+        service.interaction_tag_repository.remove_all_for_interaction.assert_awaited_once_with(interaction.id)
+        service.interaction_repository.delete.assert_awaited_once_with(interaction)
+        service.db.commit.assert_awaited_once()
+
+    async def test_missing_interaction_raises_404(self):
+        service = make_service()
+        service.interaction_repository.get_by_id.return_value = None
+
+        with pytest.raises(HTTPException) as exc_info:
+            await service.delete_interaction(OWNER, uuid.uuid4())
+
+        assert exc_info.value.status_code == 404
+        service.interaction_repository.delete.assert_not_called()
+
+    async def test_someone_elses_interaction_raises_403_and_deletes_nothing(self):
+        service = make_service()
+        interaction = SimpleNamespace(id=uuid.uuid4(), user_id=uuid.uuid4())
+        service.interaction_repository.get_by_id.return_value = interaction
+
+        with pytest.raises(HTTPException) as exc_info:
+            await service.delete_interaction(OWNER, interaction.id)
+
+        assert exc_info.value.status_code == 403
+        service.interaction_tag_repository.remove_all_for_interaction.assert_not_called()
+        service.interaction_repository.delete.assert_not_called()

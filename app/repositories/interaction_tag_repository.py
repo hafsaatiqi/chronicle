@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -50,3 +50,9 @@ class InteractionTagRepository:
         if link is not None:
             await self.db.delete(link)
             await self.db.flush()
+
+    async def remove_all_for_interaction(self, interaction_id: uuid.UUID) -> None:
+        await self.db.execute(
+            delete(UserInteractionTag).where(UserInteractionTag.interaction_id == interaction_id)
+        )
+        await self.db.flush()
