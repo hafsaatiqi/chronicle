@@ -37,3 +37,7 @@ dist/
 
 # Claude Code local state
 .claude/
+
+# Private docs (keep out of the public repo; README is still allowed)
+*.md
+!README.md
